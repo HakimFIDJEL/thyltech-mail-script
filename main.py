@@ -189,9 +189,9 @@ def handle_mails(entries):
 
         for mail in mails:
             print(f"\t[handle_mails] > Envoi vers : {mail}")
-            # send_mail(mail, row['Client / Prénom NOM'])
+            send_mail(mail, row['Client / Prénom NOM'])
 
-    send_mail("hakimfidjel.spam@gmail.com", "Hakim")
+    # send_mail("hakimfidjel.spam@gmail.com", "Hakim")
     return
 
 
@@ -207,6 +207,7 @@ def main():
     # Vérification du CSV
     if file_path is None:
         print("Aucun fichier CSV trouvé.")
+        print_separator()
         return
     
     print("Fichier trouvé: ", file_path)
