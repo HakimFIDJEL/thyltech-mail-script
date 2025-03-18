@@ -10,6 +10,8 @@ import email
 import smtplib # Pour l'envoi des emails
 import imaplib # Pour la réception des emails
 from email.message import EmailMessage
+from email.utils import getaddresses, make_msgid
+import time
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -36,13 +38,11 @@ def get_latest_csv():
     return latest_file
 
 # Fonction qui récupère les entrées à relancer
-def get_entries():
-    file_path = get_latest_csv()
+def get_entries(file_path=None):
 
-    if file_path:
+    if file_path is not None:
         print("Traitement du fichier: ", file_path)
-        print_separator()
-
+        
         # On lit le fichier CSV
         df = pd.read_csv(file_path)
         
@@ -75,48 +75,64 @@ def get_entries():
 
 # Fonction qui récupère l'id du dernier mail envoyé à une adresse mail
 def get_mail(destinataire):
-    IMAP_SERVER = 'imap.gmail.com'
-    IMAP_USER = os.environ.get('SMTP_EMAIL')
-    IMAP_PASS = os.environ.get('SMTP_PASSWORD')
+    IMAP_SERVER = os.environ.get('THYLTECH_IMAP_SERVER')
+    EMAIL_ACCOUNT = os.environ.get('THYLTECH_EMAIL')
+    PASSWORD = os.environ.get('THYLTECH_PASSWORD')
 
-    if not IMAP_USER or not IMAP_PASS:
-        print("Identifiants IMAP manquants.")
+    if not IMAP_SERVER or not EMAIL_ACCOUNT or not PASSWORD:
+        print("\t[get_mail] > Erreur : les variables d'environnement ne sont pas définies.")
         return None
 
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-        mail.login(IMAP_USER, IMAP_PASS)
-        mail.select('inbox')
+        mail.login(EMAIL_ACCOUNT, PASSWORD)
+        # mail.search(None, f'TO "{destinataire}"')
+        
+        # Sélection du dossier "Sent"
+        status, _ = mail.select('"Sent"')
+        if status != 'OK':
+            print("\t[get_mail] > Impossible d'accéder au dossier Sent.")
+            exit()
 
-        # Recherche : mails provenant de sender_email
-        result, data = mail.search(None, f'FROM "{destinataire}"')
-        if result != 'OK' or not data[0]:
-            print("Aucun mail trouvé.")
-            return None
+        # Récupération de tous les messages
+        status, data = mail.search(None, 'ALL')
+        if status != 'OK':
+            print("\t[get_mail] > Erreur lors de la recherche.")
+            exit()
 
         mail_ids = data[0].split()
-        latest_id = mail_ids[-1]
 
-        result, msg_data = mail.fetch(latest_id, '(RFC822)')
-        raw_email = msg_data[0][1]
-        msg = email.message_from_bytes(raw_email)
+        # On parcourt les mails pour trouver le dernier envoyé à cette adresse
+        for i in reversed(mail_ids):
+            status, data = mail.fetch(i, '(RFC822)')
+            if status != 'OK':
+                print("\t[get_mail] > Erreur lors de la récupération du mail.")
+                exit()
 
-        message_id = msg.get('Message-ID')
-        return message_id
+            msg = email.message_from_bytes(data[0][1])
+            if msg['To'] == destinataire:
+                return msg['Message-ID']
+
 
     except Exception as e:
-        print("Erreur IMAP :", e)
+        print("\t[get_mail] > Erreur IMAP :", e)
         return None
+    
+    return None
 
 # Fonction qui envoie un mail
 def send_mail(destinataire, nom):
 
     # On récupère les variables d'environnement
-    SMTP_EMAIL = os.environ.get('SMTP_EMAIL')
-    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
+    THYLTECH_USERNAME    = os.environ.get('THYLTECH_USERNAME')
+    THYLTECH_EMAIL       = os.environ.get('THYLTECH_EMAIL')
+    THYLTECH_PASSWORD    = os.environ.get('THYLTECH_PASSWORD')
+    THYLTECH_SMTP_SERVER = os.environ.get('THYLTECH_SMTP_SERVER')
+    THYLTECH_SMTP_PORT   = os.environ.get('THYLTECH_SMTP_PORT')
+    THYLTECH_IMAP_SERVER = os.environ.get('THYLTECH_IMAP_SERVER')
 
-    if not SMTP_EMAIL or not SMTP_PASSWORD:
-        print("Erreur : les variables SMTP_EMAIL ou SMTP_PASSWORD ne sont pas définies.")
+    if not THYLTECH_EMAIL or not THYLTECH_PASSWORD or not THYLTECH_SMTP_SERVER or not THYLTECH_SMTP_PORT or not THYLTECH_USERNAME or not THYLTECH_IMAP_SERVER:
+        print("\t[send_mail] > Erreur : les variables d'environnement ne sont pas définies.")
         return
     
     # Création du contenu du mail
@@ -125,29 +141,39 @@ def send_mail(destinataire, nom):
     # On récupère l'id du dernier mail envoyé à cette adresse
     message_id_original = get_mail(destinataire)
 
-    if(message_id_original is None):
-        # Ce n'est pas un mail de relance car on ne lui a jamais envoyé de mail
-        print("\t> Aucun mail n'a été envoyé initialement à cette adresse.")
-        return
-
     # Envoi du mail
     msg = EmailMessage()
-    msg['Subject'] = "Mail de relance"
-    msg['From'] = "noreply@thyltech.fr"
-    # msg['To'] = destinataire
-    msg['In-Reply-To'] = message_id_original
-    msg['References'] = message_id_original
+    msg_id = make_msgid()
+    msg['Message-ID'] = msg_id
+    msg['Subject']  = "Mail de relance"
+    msg['From']     = THYLTECH_EMAIL
+    msg['To']       = destinataire
 
+    if message_id_original is not None:
+        msg['References'] = message_id_original
+        msg['In-Reply-To'] = message_id_original
+        
     msg.set_content(contenu_texte)
 
-    # Connexion SMTP (ici Gmail, port 587 avec STARTTLS)
-    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
-        smtp.starttls()
-        smtp.login(SMTP_EMAIL, SMTP_PASSWORD)
-        smtp.send_message(msg)
+    print("\t[send_mail] > Envoi du mail...")   
 
+    # Envoi du mail
+    try:
+        with smtplib.SMTP_SSL(THYLTECH_SMTP_SERVER, THYLTECH_SMTP_PORT) as smtp:
+            smtp.login(THYLTECH_USERNAME, THYLTECH_PASSWORD)
+            smtp.send_message(msg)
+        print("\t[send_mail] > Mail envoyé !")
+    except Exception as e:
+        print("\t[send_mail] > Erreur SMTP :", e)
+        return
 
-    print("\t> Mail envoyé !")
+    # Sauvegarde manuelle dans la boîte "Sent"
+    try:
+        with imaplib.IMAP4_SSL(THYLTECH_IMAP_SERVER) as imap:
+            imap.login(THYLTECH_EMAIL, THYLTECH_PASSWORD)
+            imap.append('"Sent"', '', imaplib.Time2Internaldate(time.time()), msg.as_bytes())
+    except Exception as e:
+        print("\t[send_mail] > Erreur lors de la sauvegarde  :", e)
 
     return
 
@@ -166,7 +192,7 @@ def handle_mails(entries):
         print(f"\n\n# {i} / {len(entries)} # \t {row['Client / Prénom NOM']} - (ID: {index})")
 
         for mail in mails:
-            print(f"\t> Envoi vers : {mail}")
+            print(f"\t[handle_mails] > Envoi vers : {mail}")
             # send_mail(mail, row['Client / Prénom NOM'])
 
     send_mail("hakimfidjel.spam@gmail.com", "Hakim")
@@ -178,10 +204,55 @@ def handle_mails(entries):
 # Fonction principale
 def main():
     print_separator()
-    entries = get_entries()
+    
+    # On récupère le dernier fichier CSV
+    file_path = get_latest_csv()
 
-    if entries is not None:
-        handle_mails(entries)
+    # Vérification du CSV
+    if file_path is None:
+        print("Aucun fichier CSV trouvé.")
+        return
+    
+    print("Fichier trouvé: ", file_path)
+    print_separator()
+    print("Voulez-vous continuer avec ce fichier ?")
+    print("1. Oui")
+    print("2. Non")
+    print_separator()
+
+    choice = input("Votre choix: ")
+    print_separator()
+
+    if choice != "1":
+        print("Opération annulée.")
+        return
+    
+
+    # On récupère les entrées à relancer
+    entries = get_entries(file_path)
+
+    # Vérification des entrées
+    if entries is None:
+        return
+    
+    print("Entrées à relancer: ")
+    print(entries[['Client / Prénom NOM', 'Mail', 'Dernier contact', 'Étape']])
+    print_separator()
+
+    print("Voulez-vous continuer avec ces entrées ?")
+    print("1. Oui")
+    print("2. Non")
+    print_separator()
+
+    choice = input("Votre choix: ")
+    print_separator()
+
+    if choice != "1":
+        print("Opération annulée.")
+        return
+
+    # On envoie les mails
+    handle_mails(entries)
     
     return
 
