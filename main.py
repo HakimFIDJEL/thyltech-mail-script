@@ -1,7 +1,3 @@
-# Ajouter l'IMAP dans les paramètres google
-# Switch à l'adresse mail centralelille et la configurer pour l'envoi de mail
-
-
 import pandas as pd
 from datetime import datetime, timedelta
 import os
