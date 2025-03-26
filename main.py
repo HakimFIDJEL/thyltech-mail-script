@@ -117,7 +117,7 @@ def get_mail(destinataire):
     return None
 
 # Fonction qui envoie un mail
-def send_mail(destinataire, nom):
+def send_mail(destinataire, nom, code):
 
     # On récupère les variables d'environnement
     THYLTECH_USERNAME    = os.environ.get('THYLTECH_USERNAME')
@@ -132,7 +132,7 @@ def send_mail(destinataire, nom):
         return
     
     # Création du contenu du mail
-    contenu_texte = mail_template(nom)
+    contenu_texte = mail_template(nom, code)
 
     # On récupère l'id du dernier mail envoyé à cette adresse
     message_id_original = get_mail(destinataire)
@@ -189,9 +189,9 @@ def handle_mails(entries):
 
         for mail in mails:
             print(f"\t[handle_mails] > Envoi vers : {mail}")
-            send_mail(mail, row['Client / Prénom NOM'])
+            # send_mail(mail, row['Client / Prénom NOM'], row['Code'])
 
-    # send_mail("hakimfidjel.spam@gmail.com", "Hakim")
+    send_mail("hakimfidjel.spam@gmail.com", "Hakim", "FR")
     return
 
 
