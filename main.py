@@ -189,9 +189,9 @@ def handle_mails(entries):
 
         for mail in mails:
             print(f"\t[handle_mails] > Envoi vers : {mail}")
-            # send_mail(mail, row['Client / Prénom NOM'], row['Code'])
+            send_mail(mail, row['Client / Prénom NOM'], row['Code'])
 
-    send_mail("hakimfidjel.spam@gmail.com", "Hakim", "FR")
+    # send_mail("hakimfidjel.spam@gmail.com", "Hakim", "FR")
     return
 
 

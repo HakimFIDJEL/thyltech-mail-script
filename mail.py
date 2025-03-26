@@ -1,7 +1,8 @@
 def mail_template(nom="votre entreprise", code="FR"):
     
     if code == "FR":
-        return f"""Bonjour,
+        return f"""
+    Bonjour,
 
     Nous revenons vers vous concernant notre précédent message au sujet de notre Projet de Fin d’Études.
 
@@ -13,7 +14,8 @@ def mail_template(nom="votre entreprise", code="FR"):
     L’équipe Thyltech"""
     
     elif code == "EN":
-        return f"""Hello,
+        return f"""
+    Hello,
     
     We are following up on our previous message regarding our End of Studies Project.
     
@@ -26,7 +28,8 @@ def mail_template(nom="votre entreprise", code="FR"):
     The Thyltech Team"""
     
     elif code == "NL":
-        return f"""Hallo,
+        return f"""
+    Hallo,
     
     We komen terug op ons vorige bericht over ons Eindwerk.
     
