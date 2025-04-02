@@ -1,74 +1,77 @@
+# 📩 ThylTech Mail Puller — Intégration Discord
 
-# 📬 Script de relance automatique par email
-
-Ce script permet d'envoyer automatiquement des mails de relance à des contacts listés dans un fichier CSV, en se basant sur la date du dernier contact. Il envoie les emails via SMTP, les sauvegarde manuellement dans la boîte "Sent" via IMAP, et répond automatiquement au dernier message envoyé au destinataire s’il existe.
+Script Python permettant de **centraliser automatiquement les e-mails clients** dans un **canal Discord**, afin d’offrir à l’équipe projet une **vision en temps réel** des messages entrants.
 
 ---
 
 ## ⚙️ Fonctionnalités
 
-- 🔍 Analyse un fichier CSV avec des colonnes : `Client / Prénom NOM`, `Mail`, `Dernier contact`, `Étape`
-- ⏱️ Filtre les contacts à relancer après 10 jours sans réponse
-- 📧 Envoie des mails personnalisés avec `EmailMessage`
-- 🔁 Répond automatiquement au dernier mail envoyé au destinataire (`In-Reply-To`)
-- 💾 Sauvegarde manuelle des mails dans le dossier "Sent" via IMAP
-- 🧪 Confirmation utilisateur avant l’envoi
+- 📥 Connexion à une boîte mail via IMAP
+- 🔎 Récupération des e-mails non lus
+- 💬 Envoi automatique des e-mails dans un canal Discord
+- ⏱️ Exécution automatique toutes les 60 secondes
+- 🔐 Sécurisation via un fichier `.env`
 
 ---
 
 ## 📂 Structure attendue
 
-Le script s’appuie sur des fichiers `.csv` placés dans le dossier `./excel-files/`.
+Un fichier `.env` doit être placé à la racine du projet, contenant :
 
-Exemple de colonnes attendues :
-- `Client / Prénom NOM`
-- `Mail`
-- `Dernier contact`
-- `Étape`
-
----
-
-## 🔐 Variables d’environnement nécessaires
-
-Un fichier `.env` doit être présent à la racine avec les clés suivantes :
-
-```
-THYLTECH_USERNAME
-THYLTECH_EMAIL
-THYLTECH_PASSWORD
-
-THYLTECH_SMTP_SERVER
-THYLTECH_SMTP_PORT
-
-THYLTECH_IMAP_SERVER
+```env
+DISCORD_TOKEN=Votre_Token_Discord
+DISCORD_CHANNEL_ID=ID_du_Canal_Discord
+IMAP_SERVER=imap.votremail.com
+EMAIL_ACCOUNT=votre@email.com
+EMAIL_PASSWORD=VotreMotDePasse
 ```
 
 ---
 
-## ▶️ Lancer le script
+## 🚨 Prérequis
+
+- Python 3.x installé
+- Un serveur Discord avec un bot configuré
+- Un compte mail compatible IMAP
+
+---
+
+## 📦 Installation
 
 ```bash
-python main.py
-```
-
-Le script vous demandera confirmation à chaque étape avant d’envoyer les emails.
-
----
-
-## 📦 Dépendances
-
-- Python 3.10+
-- `pandas`
-- `python-dotenv`
-
-Installer via :
-
-```bash
+git clone https://github.com/Yns1000/thyltech-pull-mail.git
+cd thyltech-pull-mail
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🧠 Auteur
+## ▶️ Utilisation
 
-Projet développé par l’équipe **Thyltech** dans le cadre du **Projet de Fin d’Études** (IG2I – Centrale Lille).
+Lancez simplement le script avec :
+
+```bash
+python main.py
+```
+
+Le script se connectera à la boîte mail, analysera les messages non lus, puis les affichera dans le canal Discord spécifié.
+
+---
+
+## ⚠️ Bonnes pratiques
+
+- Ne partagez **jamais** votre fichier `.env` publiquement.
+- Ajoutez-le à votre `.gitignore` pour éviter les fuites de données sensibles.
+
+---
+
+## 💡 Améliorations futures
+
+- Ajout de filtres pour ignorer certains types d’e-mails (ex : notifications automatiques)
+- Ajout de logs ou d’une interface de supervision
+
+---
+
+## 📄 Licence
+
+Projet interne **ThylTech** — Tous droits réservés.
