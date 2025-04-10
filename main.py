@@ -52,7 +52,7 @@ def get_entries(file_path=None):
         # Etape est "En attente d'une réponse" ou "Pas de tentative"
 
         seuil = datetime.now() - timedelta(days=10)
-        df_filtré = df[((df['Dernier contact'] < seuil) | (df['Dernier contact'].isnull())) & df['Client / Prénom NOM'].notnull() & (df['Mail'].notnull()) & (df['Étape'].isin(["En attente d'une réponse", "Pas de tentative"]))]
+        df_filtré = df[((df['Dernier contact'] < seuil) | (df['Dernier contact'].isnull())) & df['Client / Prénom NOM'].notnull() & (df['Mail'].notnull()) & (df['Étape'].isin(["En attente d'une réponse"]))]
 
         if(df_filtré.empty):
             print("Aucun email à relancer.")
