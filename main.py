@@ -35,39 +35,37 @@ def get_latest_csv():
 
 # Fonction qui récupère les entrées à relancer
 def get_entries(file_path=None):
-
     if file_path is not None:
         print("Traitement du fichier: ", file_path)
         
-        # On lit le fichier CSV
+        # Lecture du fichier CSV
         df = pd.read_csv(file_path)
         
-        # On convertie la colonne 'Dernier contact' en datetime
-        df['Dernier contact'] = pd.to_datetime(df['Dernier contact'], errors='coerce')
+        # Conversion correcte du format JJ/MM/AAAA
+        df['Dernier contact'] = pd.to_datetime(df['Dernier contact'], dayfirst=True, errors='coerce')
 
         # -- Filtre
-        # Date de relance > 10 jours ou Null
-        # Nom du client non null
-        # Email non null
-        # Etape est "En attente d'une réponse" ou "Pas de tentative"
-
         seuil = datetime.now() - timedelta(days=10)
-        df_filtré = df[((df['Dernier contact'] < seuil) | (df['Dernier contact'].isnull())) & df['Client / Prénom NOM'].notnull() & (df['Mail'].notnull()) & (df['Étape'].isin(["En attente d'une réponse"]))]
+        df_filtré = df[
+            ((df['Dernier contact'] < seuil) | df['Dernier contact'].isnull()) &
+            df['Client / Prénom NOM'].notnull() &
+            df['Mail'].notnull() &
+            (df['Étape'] == "En attente d'une réponse")
+        ]
 
-        if(df_filtré.empty):
+        if df_filtré.empty:
             print("Aucun email à relancer.")
             print_separator()
             return
-        
+
         print("Nombre d'emails à relancer: ", len(df_filtré))
         print_separator()
-
         return df_filtré
 
     else:
         print("Aucun fichier CSV trouvé.")
-
     return None
+
 
 # Fonction qui récupère l'id du dernier mail envoyé à une adresse mail
 def get_mail(destinataire):
