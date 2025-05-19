@@ -47,7 +47,7 @@ def get_entries(file_path=None):
         # -- Filtre
         seuil = datetime.now() - timedelta(days=10)
         df_filtré = df[
-            ((df['Dernier contact'] < seuil) | df['Dernier contact'].isnull()) &
+            ((df['Dernier contact'] < seuil)) &
             df['Client / Prénom NOM'].notnull() &
             df['Mail'].notnull() &
             (df['Étape'] == "En attente d'une réponse")
